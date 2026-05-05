@@ -40,6 +40,8 @@ spec:
     namespace: workspace-standalone
   tenant.crownlabs.polito.it/TenantRef:
     name: john.doe
+  nodeSelector:
+    liqo.io/type: virtual-node
 ---
 apiVersion: crownlabs.polito.it/v1alpha2
 kind: Instance

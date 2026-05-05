@@ -266,18 +266,14 @@ func GetMyDrivePVCName(tenantName string) string {
 }
 
 // ConfigureMyDrivePVC configures a PVC for tenant's MyDrive storage.
-func ConfigureMyDrivePVC(pvc *v1.PersistentVolumeClaim, storageClassName string, storageSize resource.Quantity, labels, annotations map[string]string) {
-	// Set the labels and annotations
+func ConfigureMyDrivePVC(pvc *v1.PersistentVolumeClaim, storageClassName string, storageSize resource.Quantity, labels map[string]string) {
+	// Set the labels
 	if pvc.Labels == nil {
 		pvc.Labels = make(map[string]string)
 	}
-	if pvc.Annotations == nil {
-		pvc.Annotations = make(map[string]string)
-	}
 
-	// Copy the provided labels and annotations
+	// Copy the provided labels
 	maps.Copy(pvc.Labels, labels)
-	maps.Copy(pvc.Annotations, annotations)
 
 	// Configure the PVC spec
 	pvc.Spec.AccessModes = []v1.PersistentVolumeAccessMode{v1.ReadWriteMany}

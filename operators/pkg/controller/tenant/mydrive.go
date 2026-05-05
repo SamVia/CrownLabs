@@ -107,8 +107,7 @@ func (r *Reconciler) createOrUpdatePVC(
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &pvc, func() error {
 		// Configure the PVC
 		forge.ConfigureMyDrivePVC(&pvc, r.MyDrivePVCsStorageClassName, r.MyDrivePVCsSize,
-			forge.UpdateTenantResourceCommonLabels(pvc.Labels, r.TargetLabel),
-			forge.UpdateMyDrivePVCAnnotations(pvc.Annotations, tn.Name))
+			forge.UpdateTenantResourceCommonLabels(pvc.Labels, r.TargetLabel))
 
 		return controllerutil.SetControllerReference(tn, &pvc, r.Scheme)
 	})

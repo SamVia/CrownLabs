@@ -41,6 +41,7 @@ import (
 	"github.com/netgroup-polito/CrownLabs/operators/pkg/instctrl"
 	"github.com/netgroup-polito/CrownLabs/operators/pkg/utils"
 	"github.com/netgroup-polito/CrownLabs/operators/pkg/utils/restcfg"
+	offloadingv1beta1 "github.com/liqotech/liqo/apis/offloading/v1beta1"
 )
 
 var (
@@ -55,6 +56,9 @@ func init() {
 
 	utilruntime.Must(virtv1.AddToScheme(scheme))
 	utilruntime.Must(cdiv1beta1.AddToScheme(scheme))
+
+	// Registra lo schema di Liqo per poter creare/leggere le risorse NamespaceOffloading
+	utilruntime.Must(offloadingv1beta1.AddToScheme(scheme))
 }
 
 func main() {

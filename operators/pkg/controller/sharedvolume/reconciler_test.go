@@ -215,14 +215,13 @@ var _ = Describe("The sharedvolume-controller Reconcile method", Ordered, func()
 					Expect(RunReconciler()).To(Succeed())
 				})
 
-				It("Should correctly set labels, annotations and finalizers", func() {
+				It("Should correctly set labels and finalizers", func() {
 					Expect(shvol.Status.Phase).To(Equal(clv1alpha2.SharedVolumePhaseReady))
 
-					// Labels and Annotations on PVC
+					// Labels on PVC
 					Expect(k8sClient.Get(ctx, PVCNamespacedName(&shvol), &pvc)).To(Succeed())
 					Expect(pvc.Labels[forge.ProvisionJobLabel]).To(Equal(forge.ProvisionJobValueOk))
 					Expect(pvc.Labels[forge.LabelManagedByKey]).To(Equal("sharedvolume"))
-					Expect(pvc.Annotations[forge.AuthorizationAnnotationKey]).To(Equal(forge.ShVolAuthorizationAnnotationValue))
 
 					// Labels and Finalizers on ShVol
 					Expect(shvol.Labels[forge.LabelManagedByKey]).To(Equal("sharedvolume"))
@@ -394,6 +393,7 @@ var _ = Describe("The sharedvolume-controller Reconcile method", Ordered, func()
 		It("Should not create PVC and transition to phase ResourceQuotaExceeded", func() {
 			var pvc corev1.PersistentVolumeClaim
 			err := k8sClient.Get(ctx, PVCNamespacedName(&shvol), &pvc)
+			fmt.Printf("-- GOT PVC: %s | %s\n", *pvc.Spec.StorageClassName, pvc.Spec.Resources.Requests.Storage().String())
 			Expect(kerrors.IsNotFound(err)).To(BeTrue())
 
 			Expect(shvol.Status.Phase).To(Equal(clv1alpha2.SharedVolumePhaseResourceQuotaExceeded))

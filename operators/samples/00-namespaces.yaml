@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workspace-tea
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workspace-coffee
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workspace-standalone

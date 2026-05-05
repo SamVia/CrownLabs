@@ -41,6 +41,8 @@ import (
 	clctx "github.com/netgroup-polito/CrownLabs/operators/pkg/context"
 	"github.com/netgroup-polito/CrownLabs/operators/pkg/forge"
 	"github.com/netgroup-polito/CrownLabs/operators/pkg/utils"
+
+	offloadingv1alpha1 "github.com/liqotech/liqo/apis/offloading/v1beta1"
 )
 
 // InstanceReconciler reconciles an Instance object.
@@ -245,6 +247,18 @@ func (r *InstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		log.Info("instance labels correctly configured")
 	}
 
+	// --- INIZIO LOGICA LIQO OFFLOADING ---
+	// Controlliamo se l'utente ha richiesto un nodo remoto (Virtual Node di Liqo)
+	if val, ok := instance.Spec.NodeSelector["liqo.io/type"]; ok && val == "virtual-node" {
+		// Solo se la label è presente, creiamo il NamespaceOffloading
+		if err := r.EnforceNamespaceOffloading(ctx, instance.GetNamespace()); err != nil {
+			log.Error(err, "failed to enforce namespace offloading for Liqo")
+			return ctrl.Result{}, err
+		}
+	}
+	// --- FINE LOGICA LIQO OFFLOADING ---
+
+
 	// Iterate over and enforce the instance environments.
 	if err := r.enforceEnvironments(ctx); err != nil {
 		log.Error(err, "failed to enforce instance environments")
@@ -376,5 +390,40 @@ func (r *InstanceReconciler) vmiToInstance(_ context.Context, o client.Object) [
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{Namespace: o.GetNamespace(), Name: instance}}}
 	}
 
+	return nil
+}
+
+// EnforceNamespaceOffloading ensures the Liqo NamespaceOffloading object exists
+// Questo traduce ESATTAMENTE il file liqo-offloading.yaml del tutorial!
+func (r *InstanceReconciler) EnforceNamespaceOffloading(ctx context.Context, namespace string) error {
+	// 1. Dichiariamo la matrioska grande e riempiamo i Metadati
+	offloadingObj := &offloadingv1alpha1.NamespaceOffloading{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "offloading",
+			Namespace: namespace,
+		},
+	}
+
+	// 2. Chiediamo a Kubernetes: Esiste già questo oggetto nel tuo database?
+	if err := r.Get(ctx, client.ObjectKeyFromObject(offloadingObj), offloadingObj); err != nil {
+		
+		// 3. Se NON ESISTE, prepariamo i dati (l'equivalente dello yaml in RAM!)
+		if kerrors.IsNotFound(err) {
+			offloadingObj.Spec = offloadingv1alpha1.NamespaceOffloadingSpec{
+				NamespaceMappingStrategy: offloadingv1alpha1.DefaultNameMappingStrategyType,
+				PodOffloadingStrategy:    offloadingv1alpha1.LocalAndRemotePodOffloadingStrategyType,
+			}
+			
+			// 4. Premiamo il tasto "Invia"! (L'equivalente di kubectl apply -f)
+			if err := r.Create(ctx, offloadingObj); err != nil && !kerrors.IsAlreadyExists(err) {
+				return err
+			}
+			return nil // Creato con successo!
+		}
+		
+		return err // Si è verificato un errore di rete col database
+	}
+
+	// 5. Se l'oggetto esiste già, Liqo è già attivo per questo namespace, non facciamo nulla.
 	return nil
 }

@@ -617,16 +617,11 @@ var _ = Describe("NFS Mounts and Provisioning Job forging", func() {
 			labels := map[string]string{
 				"custom-label": "custom-value",
 			}
-			annotations := map[string]string{
-				"custom-annotation": "custom-value",
-			}
 
-			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels, annotations)
+			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels)
 
 			Expect(pvc.Labels).ToNot(BeNil())
 			Expect(pvc.Labels).To(HaveKeyWithValue("custom-label", "custom-value"))
-			Expect(pvc.Annotations).ToNot(BeNil())
-			Expect(pvc.Annotations).To(HaveKeyWithValue("custom-annotation", "custom-value"))
 			Expect(pvc.Spec.AccessModes).To(ConsistOf(v1.ReadWriteMany))
 			Expect(pvc.Spec.StorageClassName).ToNot(BeNil())
 			Expect(*pvc.Spec.StorageClassName).To(Equal(storageClassName))
@@ -657,7 +652,7 @@ var _ = Describe("NFS Mounts and Provisioning Job forging", func() {
 				"custom-label": "custom-value",
 			}
 
-			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels, nil)
+			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels)
 
 			Expect(pvc.Labels).To(HaveKeyWithValue("existing-label", "existing-value"))
 			Expect(pvc.Labels).To(HaveKeyWithValue("custom-label", "custom-value"))
@@ -681,7 +676,7 @@ var _ = Describe("NFS Mounts and Provisioning Job forging", func() {
 			storageSize := resource.MustParse("10Gi")
 			labels := map[string]string{}
 
-			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels, nil)
+			forge.ConfigureMyDrivePVC(pvc, storageClassName, storageSize, labels)
 
 			Expect(pvc.Spec.Resources.Requests).ToNot(BeNil())
 			Expect(pvc.Spec.Resources.Requests.Storage().String()).To(Equal("20Gi"))
