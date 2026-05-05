@@ -1,0 +1,113 @@
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Tenant
+metadata:
+  name: test.user
+  labels:
+    crownlabs.polito.it/operator-selector: local
+spec:
+  firstName: Test
+  lastName: User
+  email: test.user@example.com
+  workspaces:
+    - name: lightweight
+      role: user
+---
+apiVersion: crownlabs.polito.it/v1alpha1
+kind: Workspace
+metadata:
+  name: lightweight
+  labels:
+    crownlabs.polito.it/operator-selector: local
+spec:
+  prettyName: Lightweight Workspace
+  quota:
+    cpu: "4"
+    memory: "4Gi"
+    instances: 5
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workspace-lightweight
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-test-user
+  labels:
+    crownlabs.polito.it/operator-selector: local
+---
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Template
+metadata:
+  name: tiny-container
+  namespace: workspace-lightweight
+spec:
+  nodeSelector: {}
+  prettyName: Tiny Container
+  description: A lightweight container
+  environmentList:
+    - name: tiny-env
+      environmentType: Container
+      image: alpine:latest
+      guiEnabled: false
+      persistent: false
+      mountMyDriveVolume: false
+      resources:
+        cpu: 1
+        memory: 100M
+        reservedCPUPercentage: 10
+  workspace.crownlabs.polito.it/WorkspaceRef:
+    name: lightweight
+---
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Instance
+metadata:
+  name: instance-1
+  namespace: tenant-test-user
+spec:
+  template.crownlabs.polito.it/TemplateRef:
+    name: tiny-container
+    namespace: workspace-lightweight
+  tenant.crownlabs.polito.it/TenantRef:
+    name: test.user
+---
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Instance
+metadata:
+  name: instance-2
+  namespace: tenant-test-user
+spec:
+  template.crownlabs.polito.it/TemplateRef:
+    name: tiny-container
+    namespace: workspace-lightweight
+  tenant.crownlabs.polito.it/TenantRef:
+    name: test.user
+---
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Instance
+metadata:
+  name: instance-3-local
+  namespace: tenant-test-user
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: crownlabs-control-plane
+  template.crownlabs.polito.it/TemplateRef:
+    name: tiny-container
+    namespace: workspace-lightweight
+  tenant.crownlabs.polito.it/TenantRef:
+    name: test.user
+---
+apiVersion: crownlabs.polito.it/v1alpha2
+kind: Instance
+metadata:
+  name: instance-4-remote-explicit
+  namespace: tenant-test-user
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: crownlabs-remote
+  template.crownlabs.polito.it/TemplateRef:
+    name: tiny-container
+    namespace: workspace-lightweight
+  tenant.crownlabs.polito.it/TenantRef:
+    name: test.user

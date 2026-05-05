@@ -1,0 +1,15 @@
+apiVersion: offloading.liqo.io/v1beta1
+kind: NamespaceOffloading
+metadata:
+  name: offloading
+  namespace: tenant-test-user
+spec:
+  namespaceMappingStrategy: DefaultName
+  podOffloadingStrategy: LocalAndRemote
+  clusterSelector:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: "liqo.io/remote-cluster-id"
+            operator: In
+            values:
+              - crownlabs-remote
