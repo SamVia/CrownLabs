@@ -121,7 +121,7 @@ spec:
         contentPath: /home/crownlabs
       resources:
         cpu: 2
-        memory: 2G
+        memory: 512M
         reservedCPUPercentage: 25
   workspace.crownlabs.polito.it/WorkspaceRef:
     name: standalone

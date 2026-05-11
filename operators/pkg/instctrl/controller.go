@@ -394,8 +394,9 @@ func (r *InstanceReconciler) vmiToInstance(_ context.Context, o client.Object) [
 }
 
 // EnforceNamespaceOffloading ensures the Liqo NamespaceOffloading object exists
-// Questo traduce ESATTAMENTE il file liqo-offloading.yaml del tutorial!
 func (r *InstanceReconciler) EnforceNamespaceOffloading(ctx context.Context, namespace string) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	// 1. Dichiariamo la matrioska grande e riempiamo i Metadati
 	offloadingObj := &offloadingv1alpha1.NamespaceOffloading{
 		ObjectMeta: metav1.ObjectMeta{
@@ -405,25 +406,40 @@ func (r *InstanceReconciler) EnforceNamespaceOffloading(ctx context.Context, nam
 	}
 
 	// 2. Chiediamo a Kubernetes: Esiste già questo oggetto nel tuo database?
+	log.Info("[LIQO DEBUG] calling Get for NamespaceOffloading", "namespace", namespace)
 	if err := r.Get(ctx, client.ObjectKeyFromObject(offloadingObj), offloadingObj); err != nil {
-		
+
 		// 3. Se NON ESISTE, prepariamo i dati (l'equivalente dello yaml in RAM!)
 		if kerrors.IsNotFound(err) {
+			log.Info("[LIQO DEBUG] NamespaceOffloading not found, creating it", "namespace", namespace)
 			offloadingObj.Spec = offloadingv1alpha1.NamespaceOffloadingSpec{
 				NamespaceMappingStrategy: offloadingv1alpha1.DefaultNameMappingStrategyType,
 				PodOffloadingStrategy:    offloadingv1alpha1.LocalAndRemotePodOffloadingStrategyType,
+				// ClusterSelector con lista vuota = seleziona tutti i cluster disponibili.
+				// Campo obbligatorio in Liqo v1.1.2 (v1beta1).
+				ClusterSelector: v1.NodeSelector{
+					NodeSelectorTerms: []v1.NodeSelectorTerm{},
+				},
 			}
-			
+
 			// 4. Premiamo il tasto "Invia"! (L'equivalente di kubectl apply -f)
-			if err := r.Create(ctx, offloadingObj); err != nil && !kerrors.IsAlreadyExists(err) {
-				return err
+			if createErr := r.Create(ctx, offloadingObj); createErr != nil {
+				if kerrors.IsAlreadyExists(createErr) {
+					log.Info("[LIQO DEBUG] NamespaceOffloading already exists (race), skipping")
+					return nil
+				}
+				log.Error(createErr, "[LIQO DEBUG] Create failed", "namespace", namespace)
+				return createErr
 			}
-			return nil // Creato con successo!
+			log.Info("[LIQO DEBUG] NamespaceOffloading created successfully", "namespace", namespace)
+			return nil
 		}
-		
-		return err // Si è verificato un errore di rete col database
+
+		log.Error(err, "[LIQO DEBUG] Get failed with unexpected error", "namespace", namespace)
+		return err
 	}
 
 	// 5. Se l'oggetto esiste già, Liqo è già attivo per questo namespace, non facciamo nulla.
+	log.Info("[LIQO DEBUG] NamespaceOffloading already exists, nothing to do", "namespace", namespace)
 	return nil
 }
