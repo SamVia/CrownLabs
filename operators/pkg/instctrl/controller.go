@@ -248,15 +248,16 @@ func (r *InstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	}
 
 	// --- INIZIO LOGICA LIQO OFFLOADING ---
-	// If offloading is enabled on the instance, ensure the namespace is configured
-	// for Liqo local-and-remote offloading.
-	if r.shouldEnforceLiqoOffloading(&instance) {
+	// Controlliamo se l'utente ha richiesto un nodo remoto (Virtual Node di Liqo)
+	if val, ok := instance.Spec.NodeSelector["liqo.io/type"]; ok && val == "virtual-node" {
+		// Solo se la label è presente, creiamo il NamespaceOffloading
 		if err := r.EnforceNamespaceOffloading(ctx, instance.GetNamespace()); err != nil {
 			log.Error(err, "failed to enforce namespace offloading for Liqo")
 			return ctrl.Result{}, err
 		}
 	}
 	// --- FINE LOGICA LIQO OFFLOADING ---
+
 
 	// Iterate over and enforce the instance environments.
 	if err := r.enforceEnvironments(ctx); err != nil {
@@ -390,18 +391,6 @@ func (r *InstanceReconciler) vmiToInstance(_ context.Context, o client.Object) [
 	}
 
 	return nil
-}
-
-func (r *InstanceReconciler) shouldEnforceLiqoOffloading(instance *clv1alpha2.Instance) bool {
-	if instance.Spec.OffloadingEnabled {
-		return true
-	}
-
-	if val, ok := instance.Spec.NodeSelector["liqo.io/type"]; ok && val == "virtual-node" {
-		return true
-	}
-
-	return false
 }
 
 // EnforceNamespaceOffloading ensures the Liqo NamespaceOffloading object exists

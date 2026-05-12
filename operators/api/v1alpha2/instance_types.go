@@ -87,12 +87,6 @@ type InstanceSpec struct {
 	// Labels that are used for the selection of the node.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// +kubebuilder:default=false
-	// +kubebuilder:validation:Optional
-	// OffloadingEnabled indicates whether the instance may be offloaded by Liqo.
-	// When true, the operator ensures the namespace is configured for LocalAndRemote offloading.
-	OffloadingEnabled bool `json:"offloadingEnabled,omitempty"`
-
 	// StatusCheckURL urls for advanced integration features.
 	StatusCheckURL string `json:"statusCheckUrl,omitempty"`
 
